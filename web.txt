@@ -1,0 +1,255 @@
+index.html
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Cloud</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Solar System Cloud Storage</h1>
+        <nav>
+            <a href="register.html">Register</a>
+            <a href="login.html">Login</a>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <h2>Welcome to Your Personal Cloud in the Solar System</h2>
+            <p>Store and manage your files securely.</p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Solar System Cloud</p>
+    </footer>
+</body>
+</html>
+register.html
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Solar System Cloud</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Solar System Cloud Storage</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Register</h2>
+        <form action="php/register.php" method="post">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            
+            <button type="submit">Register</button>
+        </form>
+    </main>
+    <footer>
+        <p>&copy; 2024 Solar System Cloud</p>
+    </footer>
+</body>
+</html>
+login.html
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Solar System Cloud</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Solar System Cloud Storage</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="register.html">Register</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Login</h2>
+        <form action="php/login.php" method="post">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            
+            <button type="submit">Login</button>
+        </form>
+    </main>
+    <footer>
+        <p>&copy; 2024 Solar System Cloud</p>
+    </footer>
+</body>
+</html>
+Step 4: Back-End Development
+Database Setup
+Create a MySQL Database:
+Users table with columns for id, username, email, and password_hash.
+Files table with columns for id, user_id, file_path, and upload_date.
+register.php
+php
+Copy code
+<?php
+require 'db.php'; // Include database connection
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+    
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, $email, $password);
+    
+    if ($stmt->execute()) {
+        header("Location: ../login.html");
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+    
+    $stmt->close();
+    $conn->close();
+}
+?>
+login.php
+php
+Copy code
+<?php
+require 'db.php'; // Include database connection
+
+session_start();
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    
+    $stmt = $conn->prepare("SELECT id, password_hash FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->store_result();
+    
+    if ($stmt->num_rows > 0) {
+        $stmt->bind_result($id, $password_hash);
+        $stmt->fetch();
+        
+        if (password_verify($password, $password_hash)) {
+            $_SESSION['user_id'] = $id;
+            header("Location: ../dashboard.html");
+        } else {
+            echo "Invalid password.";
+        }
+    } else {
+        echo "No user found with that username.";
+    }
+    
+    $stmt->close();
+    $conn->close();
+}
+?>
+db.php
+php
+Copy code
+<?php
+$servername = "your_servername";
+$username = "your_username";
+$password = "your_password";
+$dbname = "your_database";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+?>
+Step 5: Dashboard and File Management
+dashboard.html
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Solar System Cloud</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Solar System Cloud Storage</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="php/logout.php">Logout</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Welcome, [Username]</h2>
+        <form action="php/upload.php" method="post" enctype="multipart/form-data">
+            <label for="file">Upload a file:</label>
+            <input type="file" id="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+        <section id="files">
+            <h3>Your Files</h3>
+            <!-- Files will be listed here -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Solar System Cloud</p>
+    </footer>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
+upload.php
+php
+Copy code
+<?php
+require 'db.php';
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.html");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['file'])) {
+    $target_dir = "../uploads/";
+    $target_file = $target_dir . basename($_FILES["file"]["name"]);
+    
+    if (move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
+        $stmt = $conn->prepare("INSERT INTO files (user_id, file_path, upload_date) VALUES (?, ?, NOW())");
+        $stmt->bind_param("is", $user_id, $target_file);
+        
+        if ($stmt->execute()) {
+            header("Location: ../dashboard.html");
+        } else {
+            echo "Error: " . $stmt->error;
+        }
+        
+        $stmt->close();
+    } else {
+        echo "Sorry, there was an error uploading your file.";
+    }
+}
